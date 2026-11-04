@@ -216,3 +216,95 @@
         });
 
         function renderTable() {
+            const tbody = document.getElementById('employeesTable');
+            document.getElementById('totalCount').innerText = filteredData.length;
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">لا توجد بيانات مطابقة أو الملف فارغ.</td></tr>`;
+                document.getElementById('pageInfo').innerText = `الصفحة 0 من 0`;
+                return;
+            }
+
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            const start = (currentPage - 1) * pageSize;
+            const pageData = filteredData.slice(start, start + pageSize);
+
+            tbody.innerHTML = pageData.map((emp, index) => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-4 font-mono text-slate-400 text-xs">${start + index + 1}</td>
+                    <td class="p-4 font-semibold text-slate-900">${emp.name}</td>
+                    <td class="p-4 text-slate-600">${emp.job}</td>
+                    <td class="p-4 font-mono text-slate-600">${emp.nationalId}</td>
+                    <td class="p-4">
+                        <span class="inline-block bg-slate-100 text-slate-800 text-xs px-2.5 py-1 rounded border border-slate-300">
+                            <strong class="text-red-600">الأصل:</strong> ${emp.originalReason}
+                        </span>
+                    </td>
+                    <td class="p-4 text-slate-700 font-medium">
+                        ${emp.translatedReason}
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('pageInfo').innerText = `الصفحة ${currentPage} من ${totalPages} (إجمالي ${filteredData.length} موظف)`;
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        }
+
+        function nextPage() {
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        }
+
+        function updateChart() {
+            const reasonCounts = {};
+            employeesData.forEach(emp => {
+                const r = emp.originalReason;
+                reasonCounts[r] = (reasonCounts[r] || 0) + 1;
+            });
+
+            const labels = Object.keys(reasonCounts);
+            const counts = Object.values(reasonCounts);
+
+            const ctx = document.getElementById('reasonsChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'عدد الاستقالات',
+                        data: counts,
+                        backgroundColor: '#1e293b',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
